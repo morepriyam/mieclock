@@ -12,9 +12,17 @@
   "app": {
     "windows": [
       {
-        "title": "mieclock",
-        "width": 800,
-        "height": 600
+        "title": "MIE Clock",
+        "width": 400,
+        "height": 500,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": true,
+        "center": true,
+        "minWidth": 400,
+        "minHeight": 500,
+        "maxWidth": 400,
+        "maxHeight": 500
       }
     ],
     "security": {
