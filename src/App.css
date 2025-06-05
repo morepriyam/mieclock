@@ -1,11 +1,3 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }
@@ -18,8 +10,10 @@ html, body {
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
-  color: #000000;
-  background-color: #ffffff;
+
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -28,17 +22,12 @@ html, body {
 }
 
 .container {
-  width: 400px;
-  height: 500px;
-  margin: 0 auto;
-  padding: 0;
-  text-align: center;
+  margin: 0;
+  padding-top: 10vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  background-color: #ffffff;
-  overflow: hidden;
+  text-align: center;
 }
 
 .logo {
@@ -68,148 +57,7 @@ a:hover {
 }
 
 h1 {
-  font-size: 2rem;
-  margin-bottom: 2rem;
-  color: #000000;
-  font-weight: bold;
-}
-
-.clock-display {
-  margin-bottom: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.current-time {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #000000;
-}
-
-.duration {
-  font-size: 1.2rem;
-  color: #666;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 1rem;
-  transition: all 0.3s ease;
-}
-
-.clock-button {
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  border: none;
-  font-size: 1.5rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.clock-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  transform: scale(0);
-  transition: transform 0.3s ease;
-}
-
-.clock-button:active::before {
-  transform: scale(2);
-}
-
-.clock-button.animating {
-  animation: pulse 0.3s ease;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.95);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.clocked-out {
-  background-color: #00ff00;
-  color: #ffffff;
-}
-
-.clocked-in {
-  background-color: #ff0000;
-  color: #ffffff;
-}
-
-.clock-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
-
-.clock-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.time-entries {
-  margin-top: 3rem;
-  text-align: left;
-}
-
-.time-entries h2 {
   text-align: center;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.entries-list {
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.entry {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem;
-  margin: 0.5rem 0;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.entry.clock-in {
-  border-left: 4px solid #2ecc71;
-}
-
-.entry.clock-out {
-  border-left: 4px solid #e74c3c;
-}
-
-.entry-type {
-  font-weight: bold;
-  text-transform: capitalize;
-}
-
-.entry-time {
-  color: #666;
 }
 
 input,
@@ -249,12 +97,8 @@ button {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    color: #ffffff;
-    background-color: #000000;
-  }
-
-  .container {
-    background-color: #000000;
+    color: #f6f6f6;
+    background-color: #2f2f2f;
   }
 
   a:hover {
@@ -268,18 +112,5 @@ button {
   }
   button:active {
     background-color: #0f0f0f69;
-  }
-
-  h1 {
-    color: #ffffff;
-  }
-
-  .current-time {
-    color: #ffffff;
-  }
-
-  .duration {
-    color: #ccc;
-    background-color: rgba(255, 255, 255, 0.1);
   }
 }
