@@ -1,42 +1,72 @@
-# MIEclock
+# MIE Clock
 
-A time tracking app with iMessage notifications built with Tauri and React.
+A desktop time tracking app that automatically sends clock in/out notifications to MIE iMessage chats.
 
 ## Features
 
-- Clock in/out with simple UI
-- Automatic iMessage notifications
-- Time tracking with session history
+- **Time Tracking**
 
-## Technical Summary
+  - Clock in/out with sound effects
+  - Real-time duration tracking
+  - Persistent state (localStorage)
+  - EST timezone display
 
-### App.tsx
+- **iMessage Integration**
 
-```tsx
-// Send iMessage notification on clock action
-await invoke("send_imessage_to_chat", {
-  guid: chatId,
-  message: isClockedIn ? `Clock Out - ${time}` : `Clock In - ${time}`,
-});
-```
+  - Automatic notifications to MIE chats
+  - Chat selection interface
+  - Message format:
+    ```
+    Clock in
+    Clock out 10:24 - 7:14pm - 8h50m - 06/04
+    ```
 
-### lib.rs
+- **UI/UX**
+  - Clean, modern interface
+  - Dark mode support
+  - Sound effects
+  - Responsive design
 
-```rust
-// Send iMessages via AppleScript
-#[tauri::command]
-fn send_imessage_to_chat(guid: String, message: String) {
-    // AppleScript implementation to send iMessages
-}
-```
+## Implementation
+
+- **Frontend (React + TypeScript)**
+
+  - State management with React hooks
+  - Local storage for persistence
+  - CSS animations and transitions
+  - Responsive layout
+
+- **Backend (Tauri + Rust)**
+  - AppleScript for iMessage integration
+  - Native system integration
+  - Secure message handling
 
 ## Setup
 
-Enable Messages permissions:
+1. Install dependencies:
 
-1. System Settings → Privacy → Automation
-2. Allow MIEclock to control Messages
+   ```bash
+   npm install
+   ```
 
-## Recommended IDE Setup
+2. Run development:
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+   ```bash
+   npm run tauri dev
+   ```
+
+3. Build:
+   ```bash
+   npm run tauri build
+   ```
+
+## Requirements
+
+- macOS (for iMessage)
+- Node.js
+- Rust
+- Xcode Command Line Tools
+
+## License
+
+MIT
