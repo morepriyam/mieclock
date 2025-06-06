@@ -46,24 +46,24 @@ A desktop time tracking app that automatically sends clock in/out notifications 
 1. Install dependencies:
 
    ```bash
-   npm install
+   bun install
    ```
 
 2. Run development:
 
    ```bash
-   npm run tauri dev
+   bun run tauri dev
    ```
 
 3. Build:
    ```bash
-   npm run tauri build
+   bun run tauri build
    ```
 
 ## Requirements
 
 - macOS (for iMessage)
-- Node.js
+- Bun
 - Rust
 - Xcode Command Line Tools
 
