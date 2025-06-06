@@ -38,39 +38,42 @@ fn get_mie_chats() -> String {
                 if output.status.success() {
                     String::from_utf8_lossy(&output.stdout).to_string()
                 } else {
-                    format!("Error: {}", String::from_utf8_lossy(&output.stderr))
+                    String::new()
                 }
             },
-            Err(e) => format!("Error executing AppleScript: {}", e)
+            Err(_) => String::new()
         }
 }
 
 #[tauri::command]
 fn send_imessage_to_chat(guid: String, message: String) {
-    println!("📱 Attempting to send iMessage to GUID: {}", guid);
-    println!("📝 Message content: {}", message);
-
     let script = format!(r#"
         tell application "Messages"
             set targetService to 1st service whose service type = iMessage
-            set targetBuddy to buddy "{}" of targetService
-            send "{}" to targetBuddy
+            try
+                set targetChat to chat id "{}"
+                send "{}" to targetChat
+            on error
+                try
+                    set targetBuddy to buddy "{}" of targetService
+                    send "{}" to targetBuddy
+                on error
+                    set theChats to chats
+                    repeat with c in theChats
+                        if id of c is "{}" then
+                            send "{}" to c
+                            exit repeat
+                        end if
+                    end repeat
+                end try
+            end try
         end tell
-    "#, guid, message);
+    "#, guid, message, guid, message, guid, message);
 
-    match Command::new("osascript")
+    let _ = Command::new("osascript")
         .arg("-e")
         .arg(&script)
-        .output() {
-            Ok(output) => {
-                if output.status.success() {
-                    println!("✅ iMessage sent successfully!");
-                } else {
-                    println!("❌ Failed to send iMessage. Error: {}", String::from_utf8_lossy(&output.stderr));
-                }
-            },
-            Err(e) => println!("❌ Error executing AppleScript: {}", e)
-        }
+        .output();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
