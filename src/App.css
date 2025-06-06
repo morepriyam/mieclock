@@ -16,15 +16,8 @@ html, body {
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 14px;
-  line-height: 1.5;
-  font-weight: 400;
   color: #000000;
   background-color: #ffffff;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
 }
 
 .container {
@@ -37,7 +30,6 @@ html, body {
   text-align: center;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: center;
   background-color: #ffffff;
   box-sizing: border-box;
@@ -72,8 +64,6 @@ a:hover {
 h1 {
   font-size: 1.5rem;
   margin: 0 0 1rem 0;
-  color: #000000;
-  font-weight: bold;
 }
 
 .clock-display {
@@ -88,7 +78,6 @@ h1 {
 .current-time {
   font-size: 1.25rem;
   font-weight: bold;
-  color: #000000;
   padding: 0.25rem 1rem;
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 0.75rem;
@@ -97,11 +86,9 @@ h1 {
 .duration {
   font-size: 1rem;
   color: #666;
-  font-weight: 500;
   padding: 0.25rem 1rem;
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 0.75rem;
-  transition: all 0.3s ease;
 }
 
 .clock-button {
@@ -112,38 +99,7 @@ h1 {
   font-size: 1.25rem;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
   margin-top: 0.5rem;
-}
-
-.clock-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  transform: scale(0);
-  transition: transform 0.3s ease;
-}
-
-.clock-button:active::before {
-  transform: scale(2);
-}
-
-.clock-button.animating {
-  animation: pulse 0.3s ease;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.95); }
-  100% { transform: scale(1); }
 }
 
 .clocked-out {
@@ -156,15 +112,9 @@ h1 {
   color: #ffffff;
 }
 
-.clock-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
-
 .clock-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-  transform: none;
 }
 
 .time-entries {
@@ -175,7 +125,6 @@ h1 {
 .time-entries h2 {
   text-align: center;
   margin-bottom: 1rem;
-  color: #333;
 }
 
 .entries-list {
@@ -251,11 +200,11 @@ button {
 @media (prefers-color-scheme: dark) {
   :root {
     color: #ffffff;
-    background-color: #000000;
+    background-color: #242424;
   }
 
   .container {
-    background-color: #000000;
+    background-color: #242424;
   }
 
   a:hover {
@@ -282,7 +231,7 @@ button {
 
   .duration {
     color: #ccc;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
   }
 }
 
@@ -310,30 +259,23 @@ button {
 
 .chat-selection {
   width: 100%;
-  margin: 0.5rem 0;
+  margin: 1rem 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .select-chat-button {
-  width: 80%;
-  max-width: 250px;
-  padding: 0.5rem 1rem;
-  background-color: #396cd8;
-  color: white;
-  border: none;
-  border-radius: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
   cursor: pointer;
+  text-align: left;
   font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.select-chat-button:hover {
-  background-color: #2d4fa3;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  color: #495057;
 }
 
 .modal-overlay {
@@ -347,88 +289,89 @@ button {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
 }
 
 .modal-content {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
   width: 90%;
-  max-width: 320px;
+  max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .modal-content h2 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1.5rem 0;
   text-align: center;
-  font-size: 1.25rem;
-  color: #333;
 }
 
 .chat-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .chat-option {
   padding: 0.75rem;
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 0.75rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
   cursor: pointer;
   text-align: left;
-  transition: all 0.3s ease;
   font-size: 0.9rem;
-}
-
-.chat-option:hover {
-  background-color: #e5e5e5;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #495057;
 }
 
 .close-modal {
-  width: 100%;
-  padding: 0.5rem;
-  background-color: #396cd8;
-  color: white;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
   border: none;
-  border-radius: 0.75rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.close-modal:hover {
-  background-color: #2d4fa3;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #666;
+  padding: 0.5rem;
+  line-height: 1;
+  border-radius: 50%;
 }
 
 @media (prefers-color-scheme: dark) {
+  :root {
+    color: #ffffff;
+    background-color: #242424;
+  }
+
+  .container {
+    background-color: #242424;
+  }
+
+  .current-time {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .duration {
+    color: #ccc;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
   .modal-content {
-    background-color: #1a1a1a;
-    color: white;
+    background: #242424;
   }
 
   .chat-option {
     background-color: #2a2a2a;
-    border-color: #3a3a3a;
-    color: white;
+    border-color: #404040;
+    color: #ffffff;
   }
 
-  .chat-option:hover {
-    background-color: #3a3a3a;
-  }
-
-  .modal-content h2 {
-    color: #fff;
+  .close-modal {
+    color: #ccc;
   }
 }
 
