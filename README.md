@@ -1,71 +1,78 @@
 # MIE Clock
 
-A desktop time tracking app that automatically sends clock in/out notifications to MIE iMessage chats.
+A desktop application for tracking work hours with iMessage integration. Built to simplify time tracking by automatically sending clock in/out notifications to MIE iMessage chats.
+
+![MIE Clock Demo](public/demo.png)
+
+## Why?
+
+- No more manual time tracking
+- Automatic notifications in MIE chat
+- Easy to use interface
+- Persistent state across sessions
+- Dark mode support
 
 ## Features
 
-- **Time Tracking**
-
-  - Clock in/out with sound effects
-  - Real-time duration tracking
-  - Persistent state (localStorage)
-  - EST timezone display
-
-- **iMessage Integration**
-
-  - Automatic notifications to MIE chats
-  - Chat selection interface
-  - Message format:
-    ```
-    Clock in
-    Clock out 10:24 - 7:14pm - 8h50m - 06/04
-    ```
-
-- **UI/UX**
-  - Clean, modern interface
-  - Dark mode support
-  - Sound effects
-  - Responsive design
+- Clock in/out with iMessage notifications
+- Automatic time tracking and duration calculation
+- MIE chat selection and persistence
+- Dark mode support
+- State persistence across sessions
 
 ## Implementation
 
-- **Frontend (React + TypeScript)**
+Built with:
 
-  - State management with React hooks
-  - Local storage for persistence
-  - CSS animations and transitions
-  - Responsive layout
+- Frontend: React + TypeScript + Tauri
+- Backend: Rust + AppleScript
+- Styling: CSS with dark mode support
 
-- **Backend (Tauri + Rust)**
-  - AppleScript for iMessage integration
-  - Native system integration
-  - Secure message handling
+### AppleScript Integration
+
+The app uses AppleScript to interact with iMessage:
+
+```applescript
+-- Send message to specific chat
+tell application "Messages"
+    set targetService to 1st service whose service type = iMessage
+    set targetChat to chat id "chat123" of targetService
+    send "Clock in" to targetChat
+end tell
+
+-- Get MIE chats
+tell application "Messages"
+    set targetService to 1st service whose service type = iMessage
+    set mieChats to {}
+    repeat with c in chats of targetService
+        if name of c contains "MIE" then
+            set end of mieChats to {name:name of c, guid:id of c}
+        end if
+    end repeat
+end tell
+```
 
 ## Setup
 
-1. Install dependencies:
+### Requirements
 
-   ```bash
-   bun install
-   ```
-
-2. Run development:
-
-   ```bash
-   bun run tauri dev
-   ```
-
-3. Build:
-   ```bash
-   bun run tauri build
-   ```
-
-## Requirements
-
-- macOS (for iMessage)
+- macOS
 - Bun
 - Rust
 - Xcode Command Line Tools
+
+### Installation
+
+```bash
+bun install
+bun run tauri dev
+```
+
+### Build
+
+```bash
+bun run tauri build
+```
 
 ## License
 
