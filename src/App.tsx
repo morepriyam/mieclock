@@ -3,9 +3,8 @@ import "./App.css";
 import { invoke } from "@tauri-apps/api/core";
 
 interface TimeEntry {
-  type: "clock-in" | "clock-out";
-  timestamp: string;
-  duration?: string;
+  type: "in" | "out";
+  time: Date;
 }
 
 interface ClockState {
@@ -19,32 +18,39 @@ interface Chat {
 }
 
 function App() {
-  const [isClockedIn, setIsClockedIn] = useState<boolean>(() => {
-    const saved = localStorage.getItem("clockState");
-    return saved ? JSON.parse(saved).isClockedIn : false;
-  });
-
   const [selectedGuid, setSelectedGuid] = useState<string>(() => {
     return localStorage.getItem("selectedGuid") || "";
   });
 
+  const [clockState, setClockState] = useState<"clocked in" | "clocked out">(
+    () => {
+      return (
+        (localStorage.getItem("clockState") as "clocked in" | "clocked out") ||
+        "clocked out"
+      );
+    }
+  );
   const [showChatModal, setShowChatModal] = useState(false);
   const [availableChats, setAvailableChats] = useState<Chat[]>([]);
-  const [selectedChatName, setSelectedChatName] = useState<string>("");
-
-  const [lastClockIn, setLastClockIn] = useState<Date | null>(() => {
-    const saved = localStorage.getItem("clockState");
-    return saved && JSON.parse(saved).lastClockIn
-      ? new Date(JSON.parse(saved).lastClockIn)
-      : null;
+  const [selectedChatName, setSelectedChatName] = useState<string>(() => {
+    return localStorage.getItem("selectedChatName") || "";
   });
-
+  const [lastClockIn, setLastClockIn] = useState<Date | null>(() => {
+    const saved = localStorage.getItem("lastClockIn");
+    return saved ? new Date(saved) : null;
+  });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAnimating, setIsAnimating] = useState(false);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(() => {
-    const saved = localStorage.getItem("timeEntries");
+  const [clockEntries, setClockEntries] = useState<TimeEntry[]>(() => {
+    const saved = localStorage.getItem("clockEntries");
     return saved ? JSON.parse(saved) : [];
   });
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mieChats, setMieChats] = useState<
+    Array<{ name: string; guid: string }>
+  >([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Update current time every second
   useEffect(() => {
@@ -55,24 +61,27 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Save time entries to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("timeEntries", JSON.stringify(timeEntries));
-  }, [timeEntries]);
-
-  // Save clock state to localStorage whenever it changes
-  useEffect(() => {
-    const clockState: ClockState = {
-      isClockedIn,
-      lastClockIn: lastClockIn?.toISOString() || null,
-    };
-    localStorage.setItem("clockState", JSON.stringify(clockState));
-  }, [isClockedIn, lastClockIn]);
-
-  // Save GUID to localStorage whenever it changes
+  // Save states to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("selectedGuid", selectedGuid);
   }, [selectedGuid]);
+
+  useEffect(() => {
+    localStorage.setItem("clockState", clockState);
+  }, [clockState]);
+
+  useEffect(() => {
+    localStorage.setItem("lastClockIn", lastClockIn?.toISOString() || "");
+  }, [lastClockIn]);
+
+  useEffect(() => {
+    localStorage.setItem("clockEntries", JSON.stringify(clockEntries));
+  }, [clockEntries]);
+
+  useEffect(() => {
+    localStorage.setItem("selectedChatName", selectedChatName);
+    localStorage.setItem("selectedGuid", selectedGuid);
+  }, [selectedChatName, selectedGuid]);
 
   const calculateDuration = useCallback((start: Date, end: Date): string => {
     const diff = Math.max(0, end.getTime() - start.getTime());
@@ -83,9 +92,9 @@ function App() {
   }, []);
 
   const getCurrentDuration = useCallback((): string => {
-    if (!isClockedIn || !lastClockIn) return "0h 0m 0s";
+    if (clockState !== "clocked in" || !lastClockIn) return "0h 0m 0s";
     return calculateDuration(lastClockIn, currentTime);
-  }, [isClockedIn, lastClockIn, currentTime, calculateDuration]);
+  }, [clockState, lastClockIn, currentTime, calculateDuration]);
 
   const playSound = useCallback((type: "in" | "out") => {
     const audio = new Audio(type === "in" ? "/clock-in.mp3" : "/clock-out.mp3");
@@ -98,25 +107,22 @@ function App() {
   const formatTime = (date: Date) => {
     return date
       .toLocaleTimeString("en-US", {
-        timeZone: "America/New_York",
-        hour12: true,
         hour: "2-digit",
         minute: "2-digit",
+        hour12: true,
       })
-      .replace(/\s/g, "");
+      .toLowerCase();
   };
 
   const formatDate = (date: Date) => {
-    return date
-      .toLocaleDateString("en-US", {
-        month: "2-digit",
-        day: "2-digit",
-      })
-      .replace(/\//g, "/");
+    return date.toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+    });
   };
 
-  const formatDuration = (start: Date, end: Date): string => {
-    const diff = Math.max(0, end.getTime() - start.getTime());
+  const formatDuration = (start: Date, end: Date) => {
+    const diff = end.getTime() - start.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
@@ -127,116 +133,129 @@ function App() {
   };
 
   const handleClockAction = async () => {
-    setIsAnimating(true);
-
-    // Play sound effect
-    playSound(isClockedIn ? "out" : "in");
-
-    // Add animation delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    const now = new Date();
-    const newEntry: TimeEntry = {
-      type: isClockedIn ? "clock-out" : "clock-in",
-      timestamp: now.toLocaleString("en-US", {
-        timeZone: "America/New_York",
-      }),
-    };
-
-    if (isClockedIn && lastClockIn) {
-      newEntry.duration = calculateDuration(lastClockIn, now);
+    if (!selectedGuid) {
+      alert("Please select a chat first!");
+      return;
     }
 
-    setTimeEntries((prev) => [...prev, newEntry]);
-    setIsClockedIn(!isClockedIn);
+    if (clockState === "clocked out") {
+      // Clock in
+      const now = new Date();
+      setLastClockIn(now);
+      setClockState("clocked in");
+      setClockEntries((prev) => [...prev, { type: "in", time: now }]);
+      setElapsedTime(0);
 
-    // Send iMessage if GUID is set
-    if (selectedGuid) {
-      let message = "";
-      if (isClockedIn) {
-        // Clock out message
-        if (lastClockIn) {
-          const duration = formatDuration(lastClockIn, now);
-          message = `Clock out ${formatTime(lastClockIn)} - ${formatTime(
-            now
-          )} - ${duration} - ${formatDate(now)}`;
-        }
-      } else {
-        // Clock in message
-        message = `Clock in`;
-      }
-
-      console.log(`Attempting to send iMessage to GUID: ${selectedGuid}`);
-      console.log(`Message content: ${message}`);
-
+      // Send clock in message only when using the button
       try {
+        const message = "Clock in";
         await invoke("send_imessage_to_chat", {
           guid: selectedGuid,
-          message: message,
+          message,
         });
-        console.log("✅ iMessage sent successfully!");
       } catch (error) {
-        console.error("❌ Failed to send iMessage:", error);
-        console.error("Error details:", {
-          guid: selectedGuid,
-          message: message,
-          error: error,
-        });
+        console.error("Error sending clock-in message:", error);
       }
     } else {
-      console.log("⚠️ No GUID provided, skipping iMessage send");
-    }
+      // Clock out - always send message
+      const now = new Date();
 
-    if (!isClockedIn) {
-      setLastClockIn(now);
-    } else {
-      setLastClockIn(null);
-    }
+      try {
+        if (lastClockIn) {
+          const message = `Clock out ${formatTime(lastClockIn)} - ${formatTime(
+            now
+          )} - ${formatDuration(lastClockIn, now)} - ${formatDate(now)}`;
+          await invoke("send_imessage_to_chat", {
+            guid: selectedGuid,
+            message,
+          });
+        }
+      } catch (error) {
+        console.error("Error sending clock-out message:", error);
+      }
 
-    // Reset animation state
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 300);
+      setClockState("clocked out");
+      setClockEntries((prev) => [...prev, { type: "out", time: now }]);
+    }
   };
 
   const handleSelectChat = async () => {
     try {
+      console.log("Fetching MIE chats...");
       const result = await invoke<string>("get_mie_chats");
-      const chatLines = result.split("\n").filter((line) => line.trim() !== "");
-      const chats = chatLines
-        .map((line) => {
-          const match = line.match(/Chat Name: (.*?) \| GUID: (.*)/);
-          if (match) {
-            return {
-              name: match[1],
-              guid: match[2],
-            };
-          }
-          return null;
-        })
-        .filter((chat): chat is Chat => chat !== null);
+      console.log("Raw chat result from AppleScript:", result);
 
+      // Split the result into lines and parse each chat
+      const lines = result.split(/\r?\n/); // Handle both \r\n and \n
+      console.log("Split into lines:", lines);
+
+      const chats = lines
+        .filter((line: string) => {
+          const trimmed = line.trim();
+          console.log("Processing line:", trimmed);
+          return trimmed !== "";
+        })
+        .map((line: string) => {
+          // Split by \r if the line contains multiple chats
+          const chatLines = line.split("\r").filter((l) => l.trim() !== "");
+          console.log("Chat lines in current line:", chatLines);
+
+          return chatLines.map((chatLine) => {
+            console.log("Parsing chat line:", chatLine);
+            const match = chatLine.match(/Chat Name: (.*?) \| GUID: (.*)/);
+            console.log("Match result:", match);
+            if (match) {
+              const chat = {
+                name: match[1],
+                guid: match[2],
+              };
+              console.log("Created chat object:", chat);
+              return chat;
+            }
+            console.log("No match found for line");
+            return null;
+          });
+        })
+        .flat() // Flatten the array of arrays
+        .filter((chat): chat is { name: string; guid: string } => {
+          const isValid = chat !== null;
+          console.log("Filtering chat:", chat, "isValid:", isValid);
+          return isValid;
+        });
+
+      console.log("Final parsed chats:", chats);
+      console.log("Number of parsed chats:", chats.length);
       setAvailableChats(chats);
       setShowChatModal(true);
     } catch (error) {
-      console.error("Failed to get MIE chats:", error);
+      console.error("Error getting MIE chats:", error);
     }
   };
 
-  const handleChatSelection = (chat: Chat) => {
+  const handleChatSelect = (chat: { name: string; guid: string }) => {
     setSelectedGuid(chat.guid);
     setSelectedChatName(chat.name);
+    localStorage.setItem("selectedGuid", chat.guid);
+    localStorage.setItem("selectedChatName", chat.name);
     setShowChatModal(false);
   };
 
+  // Load selected chat name from localStorage on startup
+  useEffect(() => {
+    const savedChatName = localStorage.getItem("selectedChatName");
+    if (savedChatName) {
+      setSelectedChatName(savedChatName);
+    }
+  }, []);
+
   return (
-    <main className="container">
+    <div className="app-container">
       <h1>MIE Clock</h1>
 
       <div className="clock-display">
         <div className="current-time">{formatTime(currentTime)} EST</div>
         <div className="duration">
-          {isClockedIn
+          {clockState === "clocked in"
             ? `Current Session: ${getCurrentDuration()}`
             : "0h 0m 0s"}
         </div>
@@ -244,37 +263,37 @@ function App() {
 
       <div className="chat-selection">
         <button className="select-chat-button" onClick={handleSelectChat}>
-          {selectedChatName ? `Selected: ${selectedChatName}` : "Select Chat"}
+          {selectedChatName || "Select MIE Chat"}
         </button>
       </div>
 
       <button
         className={`clock-button ${
-          isClockedIn ? "clocked-in" : "clocked-out"
+          clockState === "clocked in" ? "clocked-in" : "clocked-out"
         } ${isAnimating ? "animating" : ""}`}
         onClick={handleClockAction}
         disabled={isAnimating}
       >
-        {isClockedIn ? "Clock Out" : "Clock In"}
+        {clockState === "clocked in" ? "Clock Out" : "Clock In"}
       </button>
 
       {showChatModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal">
             <h2>Select MIE Chat</h2>
             <div className="chat-list">
-              {availableChats.map((chat, index) => (
+              {availableChats.map((chat) => (
                 <button
-                  key={index}
+                  key={chat.guid}
                   className="chat-option"
-                  onClick={() => handleChatSelection(chat)}
+                  onClick={() => handleChatSelect(chat)}
                 >
                   {chat.name}
                 </button>
               ))}
             </div>
             <button
-              className="close-modal"
+              className="close-button"
               onClick={() => setShowChatModal(false)}
             >
               Close
@@ -282,7 +301,7 @@ function App() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
