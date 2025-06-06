@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
+import { invoke } from "@tauri-apps/api/core";
 
 interface TimeEntry {
   type: "clock-in" | "clock-out";
@@ -12,11 +13,24 @@ interface ClockState {
   lastClockIn: string | null;
 }
 
+interface Chat {
+  name: string;
+  guid: string;
+}
+
 function App() {
   const [isClockedIn, setIsClockedIn] = useState<boolean>(() => {
     const saved = localStorage.getItem("clockState");
     return saved ? JSON.parse(saved).isClockedIn : false;
   });
+
+  const [selectedGuid, setSelectedGuid] = useState<string>(() => {
+    return localStorage.getItem("selectedGuid") || "";
+  });
+
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [availableChats, setAvailableChats] = useState<Chat[]>([]);
+  const [selectedChatName, setSelectedChatName] = useState<string>("");
 
   const [lastClockIn, setLastClockIn] = useState<Date | null>(() => {
     const saved = localStorage.getItem("clockState");
@@ -55,6 +69,11 @@ function App() {
     localStorage.setItem("clockState", JSON.stringify(clockState));
   }, [isClockedIn, lastClockIn]);
 
+  // Save GUID to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("selectedGuid", selectedGuid);
+  }, [selectedGuid]);
+
   const calculateDuration = useCallback((start: Date, end: Date): string => {
     const diff = Math.max(0, end.getTime() - start.getTime());
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -75,6 +94,37 @@ function App() {
       console.log("Audio playback failed");
     });
   }, []);
+
+  const formatTime = (date: Date) => {
+    return date
+      .toLocaleTimeString("en-US", {
+        timeZone: "America/New_York",
+        hour12: true,
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      .replace(/\s/g, "");
+  };
+
+  const formatDate = (date: Date) => {
+    return date
+      .toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+      })
+      .replace(/\//g, "/");
+  };
+
+  const formatDuration = (start: Date, end: Date): string => {
+    const diff = Math.max(0, end.getTime() - start.getTime());
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (minutes === 0) {
+      return `${hours}h`;
+    }
+    return `${hours}h${minutes}m`;
+  };
 
   const handleClockAction = async () => {
     setIsAnimating(true);
@@ -100,6 +150,43 @@ function App() {
     setTimeEntries((prev) => [...prev, newEntry]);
     setIsClockedIn(!isClockedIn);
 
+    // Send iMessage if GUID is set
+    if (selectedGuid) {
+      let message = "";
+      if (isClockedIn) {
+        // Clock out message
+        if (lastClockIn) {
+          const duration = formatDuration(lastClockIn, now);
+          message = `Clock out ${formatTime(lastClockIn)} - ${formatTime(
+            now
+          )} - ${duration} - ${formatDate(now)}`;
+        }
+      } else {
+        // Clock in message
+        message = `Clock in`;
+      }
+
+      console.log(`Attempting to send iMessage to GUID: ${selectedGuid}`);
+      console.log(`Message content: ${message}`);
+
+      try {
+        await invoke("send_imessage_to_chat", {
+          guid: selectedGuid,
+          message: message,
+        });
+        console.log("✅ iMessage sent successfully!");
+      } catch (error) {
+        console.error("❌ Failed to send iMessage:", error);
+        console.error("Error details:", {
+          guid: selectedGuid,
+          message: message,
+          error: error,
+        });
+      }
+    } else {
+      console.log("⚠️ No GUID provided, skipping iMessage send");
+    }
+
     if (!isClockedIn) {
       setLastClockIn(now);
     } else {
@@ -112,14 +199,34 @@ function App() {
     }, 300);
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
-      timeZone: "America/New_York",
-      hour12: true,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+  const handleSelectChat = async () => {
+    try {
+      const result = await invoke<string>("get_mie_chats");
+      const chatLines = result.split("\n").filter((line) => line.trim() !== "");
+      const chats = chatLines
+        .map((line) => {
+          const match = line.match(/Chat Name: (.*?) \| GUID: (.*)/);
+          if (match) {
+            return {
+              name: match[1],
+              guid: match[2],
+            };
+          }
+          return null;
+        })
+        .filter((chat): chat is Chat => chat !== null);
+
+      setAvailableChats(chats);
+      setShowChatModal(true);
+    } catch (error) {
+      console.error("Failed to get MIE chats:", error);
+    }
+  };
+
+  const handleChatSelection = (chat: Chat) => {
+    setSelectedGuid(chat.guid);
+    setSelectedChatName(chat.name);
+    setShowChatModal(false);
   };
 
   return (
@@ -135,6 +242,12 @@ function App() {
         </div>
       </div>
 
+      <div className="chat-selection">
+        <button className="select-chat-button" onClick={handleSelectChat}>
+          {selectedChatName ? `Selected: ${selectedChatName}` : "Select Chat"}
+        </button>
+      </div>
+
       <button
         className={`clock-button ${
           isClockedIn ? "clocked-in" : "clocked-out"
@@ -144,6 +257,31 @@ function App() {
       >
         {isClockedIn ? "Clock Out" : "Clock In"}
       </button>
+
+      {showChatModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Select MIE Chat</h2>
+            <div className="chat-list">
+              {availableChats.map((chat, index) => (
+                <button
+                  key={index}
+                  className="chat-option"
+                  onClick={() => handleChatSelection(chat)}
+                >
+                  {chat.name}
+                </button>
+              ))}
+            </div>
+            <button
+              className="close-modal"
+              onClick={() => setShowChatModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
