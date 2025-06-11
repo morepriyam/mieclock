@@ -4,6 +4,15 @@ A desktop application for tracking work hours with iMessage integration. Built t
 
 ![MIE Clock Demo](public/demo.png)
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Why?](#why)
+- [Features](#features)
+- [Implementation](#implementation)
+- [Setup](#setup)
+- [License](#license)
+
 ## Quick Start
 
 1. Create an iMessage chat and add "MIE" to its name (e.g., "MIE Clock", "MIE Team")
